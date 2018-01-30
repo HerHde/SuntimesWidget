@@ -19,13 +19,11 @@ package com.forrestguice.suntimeswidget;
 
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.graphics.Paint;
-import android.graphics.Typeface;
 
+import android.graphics.Color;
 import android.support.v4.content.ContextCompat;
 import android.text.SpannableString;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 
@@ -52,6 +50,8 @@ public class EquinoxView extends LinearLayout
     private View layout;
     private TextView labelView, timeView, noteView;
     protected Calendar time, now;
+
+    private int[] colors = new int[4];
 
     public EquinoxView(Context context)
     {
@@ -92,14 +92,14 @@ public class EquinoxView extends LinearLayout
 
     private void initColors(Context context)
     {
-        int[] colorAttrs = { android.R.attr.textColorPrimary }; //, R.attr.springColor, R.attr.summerColor, R.attr.fallColor, R.attr.winterColor };
+        int[] colorAttrs = { android.R.attr.textColorPrimary , R.attr.springColor, R.attr.summerColor, R.attr.fallColor, R.attr.winterColor };
         TypedArray typedArray = context.obtainStyledAttributes(colorAttrs);
         int def = R.color.transparent;
         noteColor = ContextCompat.getColor(context, typedArray.getResourceId(0, def));
-        //springColor = ContextCompat.getColor(context, typedArray.getResourceId(1, def));
-        //summerColor = ContextCompat.getColor(context, typedArray.getResourceId(2, def));
-        //fallColor = ContextCompat.getColor(context, typedArray.getResourceId(3, def));
-        //winterColor = ContextCompat.getColor(context, typedArray.getResourceId(4, def));
+        colors[0] = ContextCompat.getColor(context, typedArray.getResourceId(1, def));
+        colors[1] = ContextCompat.getColor(context, typedArray.getResourceId(2, def));
+        colors[2] = ContextCompat.getColor(context, typedArray.getResourceId(3, def));
+        colors[3] = ContextCompat.getColor(context, typedArray.getResourceId(4, def));
         typedArray.recycle();
     }
 
@@ -117,41 +117,29 @@ public class EquinoxView extends LinearLayout
         return trackingMode;
     }
 
-    /**private EquinoxNote findSoonestNote(Calendar now)
+    public void updateColor(WidgetSettings.SolsticeEquinoxMode mode)
     {
-        return findClosestNote(now, true);
-    }
-    private EquinoxNote findClosestNote(Calendar now)
-    {
-        return findClosestNote(now, false);
-    }
-    private EquinoxNote findClosestNote(Calendar now, boolean upcoming)
-    {
-        if (notes == null || now == null)
+        int timeColor;
+        switch (mode)
         {
-            return null;
-        }
+            case EQUINOX_VERNAL:
+                timeColor = colors[0];
+                break;
 
-        EquinoxNote closest = null;
-        long timeDeltaMin = Long.MAX_VALUE;
-        for (EquinoxNote note : notes)
-        {
-            Calendar noteTime = note.getTime();
-            if (noteTime != null)
-            {
-                if (upcoming && !noteTime.after(now))
-                    continue;
+            case SOLSTICE_SUMMER:
+                timeColor = colors[1];
+                break;
 
-                long timeDelta = Math.abs(noteTime.getTimeInMillis() - now.getTimeInMillis());
-                if (timeDelta < timeDeltaMin)
-                {
-                    timeDeltaMin = timeDelta;
-                    closest = note;
-                }
-            }
+            case EQUINOX_AUTUMNAL:
+                timeColor = colors[2];
+                break;
+
+            case SOLSTICE_WINTER:
+            default:
+                timeColor = colors[3];
         }
-        return closest;
-    }*/
+        timeView.setTextColor(timeColor);
+    }
 
     public void updateTime( Context context, Calendar time )
     {
@@ -214,7 +202,7 @@ public class EquinoxView extends LinearLayout
             SuntimesEquinoxSolsticeData eventData = (trackingMode == WidgetSettings.TrackingMode.SOONEST ? data.findSoonest(data.now())
                                                                                                          : data.findClosest(data.now()));
             Calendar eventCalendar = eventData.eventCalendarUpcoming(data.now());
-
+            updateColor(eventData.timeMode());
             boolean showSeconds = WidgetSettings.loadShowSecondsPref(context, 0);
             updateTime(context, eventCalendar, showSeconds);
             updateNote(context, data.now(), noteColor);

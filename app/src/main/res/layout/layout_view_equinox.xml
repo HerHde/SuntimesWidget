@@ -50,7 +50,7 @@
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:id="@+id/text_date_equinox"
                 android:textSize="12sp" android:antialias="true"
-                android:textColor="@drawable/txt_equinox_vernal"
+                android:textColor="@drawable/txt_solstice_summer"
                 android:clickable="true" android:focusable="true" android:focusableInTouchMode="true"
                 android:singleLine="true" android:ellipsize="marquee" android:textIsSelectable="true"
                 tools:text="March 20, 2016; 9:00 PM" />
