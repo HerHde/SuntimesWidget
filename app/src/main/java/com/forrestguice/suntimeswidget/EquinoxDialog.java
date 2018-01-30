@@ -20,6 +20,7 @@ package com.forrestguice.suntimeswidget;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -62,17 +63,22 @@ public class EquinoxDialog extends DialogFragment
             equinoxTable.loadState(savedInstanceState);
         }
 
-        dialog.setOnShowListener(new DialogInterface.OnShowListener()
-        {
-            @Override
-            public void onShow(DialogInterface dialogInterface)
-            {
-                equinoxTable.updateViews(getContext(), data);
-            }
-        });
-
+        dialog.setOnShowListener(onShowListener);
         return dialog;
     }
+
+    private DialogInterface.OnShowListener onShowListener = new DialogInterface.OnShowListener()
+    {
+        @Override
+        public void onShow(DialogInterface dialogInterface)
+        {
+            Context context = getContext();
+            if (context != null)
+            {
+                equinoxTable.updateViews(getContext(), data);
+            } else Log.w("EquinoxDialog.onShow", "null context! skipping update");
+        }
+    };
 
     public void initViews(View dialogView)
     {
