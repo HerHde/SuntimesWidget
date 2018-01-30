@@ -201,7 +201,10 @@ public class EquinoxView extends LinearLayout
         {
             SuntimesEquinoxSolsticeData eventData = (trackingMode == WidgetSettings.TrackingMode.SOONEST ? data.findSoonest(data.now())
                                                                                                          : data.findClosest(data.now()));
-            Calendar eventCalendar = eventData.eventCalendarUpcoming(data.now());
+
+            Calendar eventCalendar = (trackingMode == WidgetSettings.TrackingMode.SOONEST ? eventData.eventCalendarClosest(data.now())
+                                                                                          : eventData.eventCalendarUpcoming(data.now()));
+
             updateColor(eventData.timeMode());
             boolean showSeconds = WidgetSettings.loadShowSecondsPref(context, 0);
             updateTime(context, eventCalendar, showSeconds);
