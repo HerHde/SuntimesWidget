@@ -21,56 +21,37 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Paint;
 import android.graphics.Typeface;
-import android.os.Bundle;
+
 import android.support.v4.content.ContextCompat;
 import android.text.SpannableString;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import android.widget.FrameLayout;
-import android.widget.ImageButton;
-import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
-import android.widget.ViewFlipper;
 
+import android.view.View;
+
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import com.forrestguice.suntimeswidget.calculator.SuntimesEquinoxSolsticeData;
 import com.forrestguice.suntimeswidget.calculator.SuntimesEquinoxSolsticeDataset;
 import com.forrestguice.suntimeswidget.settings.AppSettings;
 import com.forrestguice.suntimeswidget.settings.WidgetSettings;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 
 @SuppressWarnings("Convert2Diamond")
 public class EquinoxView extends LinearLayout
 {
-    public static final String KEY_UI_USERSWAPPEDCARD = "userSwappedEquinoxCard";
-    public static final String KEY_UI_CARDISNEXTYEAR = "equinoxCardIsNextYear";
-    public static final String KEY_UI_MINIMIZED = "equinoxIsMinimized";
-
     private SuntimesUtils utils = new SuntimesUtils();
-    private boolean userSwappedCard = false;
     private boolean isRtl = false;
-    private boolean minimized = false;
     private boolean centered = false;
     private WidgetSettings.TrackingMode trackingMode = WidgetSettings.TrackingMode.SOONEST;
 
-    private TextView empty;
-    private ViewFlipper flipper;           // flip between thisYear, nextYear
-    private Animation anim_card_outNext, anim_card_inNext, anim_card_outPrev, anim_card_inPrev;
-    private ImageButton btn_flipperNext_thisYear, btn_flipperPrev_thisYear;
-    private ImageButton btn_flipperNext_nextYear, btn_flipperPrev_nextYear;
-
-    private TextView titleThisYear, titleNextYear;
-
-    private EquinoxNote note_equinox_vernal, note_solstice_summer, note_equinox_autumnal, note_solstice_winter;  // this year
-    private EquinoxNote note_equinox_vernal2, note_solstice_summer2, note_equinox_autumnal2, note_solstice_winter2;  // and next year
-    private ArrayList<EquinoxNote> notes;
+    private View layout;
+    private TextView labelView, timeView, noteView;
+    protected Calendar time, now;
 
     public EquinoxView(Context context)
     {
@@ -81,18 +62,7 @@ public class EquinoxView extends LinearLayout
     public EquinoxView(Context context, AttributeSet attrs)
     {
         super(context, attrs);
-        applyAttributes(context, attrs);
         init(context, attrs);
-    }
-
-    private void applyAttributes(Context context, AttributeSet attrs)
-    {
-        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.EquinoxView, 0, 0);
-        try {
-            setMinimized(a.getBoolean(R.styleable.EquinoxView_minimized, false));
-        } finally {
-            a.recycle();
-        }
     }
 
     private void init(Context context, AttributeSet attrs)
@@ -107,119 +77,15 @@ public class EquinoxView extends LinearLayout
             centered = ((lp.gravity == Gravity.CENTER) || (lp.gravity == Gravity.CENTER_HORIZONTAL));
         }
 
-        empty = (TextView)findViewById(R.id.txt_empty);
-
-        flipper = (ViewFlipper)findViewById(R.id.info_equinoxsolstice_flipper);
-        flipper.setOnTouchListener(cardTouchListener);
-
-        notes = new ArrayList<EquinoxNote>();
-
-        RelativeLayout thisYear = (RelativeLayout)findViewById(R.id.info_equinoxsolstice_thisyear);
-        if (thisYear != null)
-        {
-            btn_flipperNext_thisYear = (ImageButton)thisYear.findViewById(R.id.info_time_nextbtn);
-            btn_flipperNext_thisYear.setOnClickListener(onNextCardClick);
-            btn_flipperNext_thisYear.setOnTouchListener(createButtonListener(btn_flipperNext_thisYear));
-
-            btn_flipperPrev_thisYear = (ImageButton)thisYear.findViewById(R.id.info_time_prevbtn);
-            btn_flipperPrev_thisYear.setVisibility(View.GONE);
-
-            titleThisYear = (TextView) thisYear.findViewById(R.id.text_title);
-
-            TextView txt_equinox_vernal_label = (TextView) thisYear.findViewById(R.id.text_date_equinox_vernal_label);
-            TextView txt_equinox_vernal = (TextView) thisYear.findViewById(R.id.text_date_equinox_vernal);
-            TextView txt_equinox_vernal_note = (TextView) thisYear.findViewById(R.id.text_date_equinox_vernal_note);
-            note_equinox_vernal = addNote(txt_equinox_vernal_label, txt_equinox_vernal, txt_equinox_vernal_note, 0 );
-
-            TextView txt_solstice_summer_label = (TextView) thisYear.findViewById(R.id.text_date_solstice_summer_label);
-            TextView txt_solstice_summer = (TextView) thisYear.findViewById(R.id.text_date_solstice_summer);
-            TextView txt_solstice_summer_note = (TextView) thisYear.findViewById(R.id.text_date_solstice_summer_note);
-            note_solstice_summer = addNote(txt_solstice_summer_label, txt_solstice_summer, txt_solstice_summer_note, 0);
-
-            TextView txt_equinox_autumnal_label = (TextView) thisYear.findViewById(R.id.text_date_equinox_autumnal_label);
-            TextView txt_equinox_autumnal = (TextView) thisYear.findViewById(R.id.text_date_equinox_autumnal);
-            TextView txt_equinox_autumnal_note = (TextView) thisYear.findViewById(R.id.text_date_equinox_autumnal_note);
-            note_equinox_autumnal = addNote(txt_equinox_autumnal_label, txt_equinox_autumnal, txt_equinox_autumnal_note, 0);
-
-            TextView txt_solstice_winter_label = (TextView) thisYear.findViewById(R.id.text_date_solstice_winter_label);
-            TextView txt_solstice_winter = (TextView) thisYear.findViewById(R.id.text_date_solstice_winter);
-            TextView txt_solstice_winter_note = (TextView) thisYear.findViewById(R.id.text_date_solstice_winter_note);
-            note_solstice_winter = addNote(txt_solstice_winter_label, txt_solstice_winter, txt_solstice_winter_note, 0);
-
-            if (centered)
-            {
-                FrameLayout.LayoutParams lpThisYear = (FrameLayout.LayoutParams)thisYear.getLayoutParams();
-                lpThisYear.gravity = Gravity.CENTER_HORIZONTAL;
-                thisYear.setLayoutParams(lpThisYear);
-            }
-        }
-
-        RelativeLayout nextYear = (RelativeLayout)findViewById(R.id.info_equinoxsolstice_nextyear);
-        if (nextYear != null)
-        {
-            btn_flipperNext_nextYear = (ImageButton)nextYear.findViewById(R.id.info_time_nextbtn);
-            btn_flipperNext_nextYear.setVisibility(View.GONE);
-
-            btn_flipperPrev_nextYear = (ImageButton)nextYear.findViewById(R.id.info_time_prevbtn);
-            btn_flipperPrev_nextYear.setOnClickListener(onPrevCardClick);
-            btn_flipperPrev_nextYear.setOnTouchListener(createButtonListener(btn_flipperPrev_nextYear));
-
-            titleNextYear = (TextView) nextYear.findViewById(R.id.text_title);
-
-            TextView txt_equinox_vernal2_label = (TextView) nextYear.findViewById(R.id.text_date_equinox_vernal_label);
-            TextView txt_equinox_vernal2 = (TextView) nextYear.findViewById(R.id.text_date_equinox_vernal);
-            TextView txt_equinox_vernal2_note = (TextView) nextYear.findViewById(R.id.text_date_equinox_vernal_note);
-            note_equinox_vernal2 = addNote(txt_equinox_vernal2_label, txt_equinox_vernal2, txt_equinox_vernal2_note, 1);
-
-            TextView txt_solstice_summer2_label = (TextView) nextYear.findViewById(R.id.text_date_solstice_summer_label);
-            TextView txt_solstice_summer2 = (TextView) nextYear.findViewById(R.id.text_date_solstice_summer);
-            TextView txt_solstice_summer2_note = (TextView) nextYear.findViewById(R.id.text_date_solstice_summer_note);
-            note_solstice_summer2 = addNote(txt_solstice_summer2_label, txt_solstice_summer2, txt_solstice_summer2_note, 1);
-
-            TextView txt_equinox_autumnal2_label = (TextView) nextYear.findViewById(R.id.text_date_equinox_autumnal_label);
-            TextView txt_equinox_autumnal2 = (TextView) nextYear.findViewById(R.id.text_date_equinox_autumnal);
-            TextView txt_equinox_autumnal2_note = (TextView) nextYear.findViewById(R.id.text_date_equinox_autumnal_note);
-            note_equinox_autumnal2 = addNote(txt_equinox_autumnal2_label, txt_equinox_autumnal2, txt_equinox_autumnal2_note, 1);
-
-            TextView txt_solstice_winter2_label = (TextView) nextYear.findViewById(R.id.text_date_solstice_winter_label);
-            TextView txt_solstice_winter2 = (TextView) nextYear.findViewById(R.id.text_date_solstice_winter);
-            TextView txt_solstice_winter2_note = (TextView) nextYear.findViewById(R.id.text_date_solstice_winter_note);
-            note_solstice_winter2 = addNote(txt_solstice_winter2_label, txt_solstice_winter2, txt_solstice_winter2_note, 1);
-
-            if (centered)
-            {
-                FrameLayout.LayoutParams lpNextYear = (FrameLayout.LayoutParams)nextYear.getLayoutParams();
-                lpNextYear.gravity = Gravity.CENTER_HORIZONTAL;
-                nextYear.setLayoutParams(lpNextYear);
-            }
-        }
+        layout = findViewById(R.id.info_equinoxsolstice_layout);
+        labelView = (TextView)findViewById(R.id.text_date_equinox_label);
+        timeView = (TextView)findViewById(R.id.text_date_equinox);
+        noteView = (TextView)findViewById(R.id.text_date_equinox_note);
 
         if (isInEditMode())
         {
             updateViews(context, null);
         }
-    }
-
-    private View.OnTouchListener createButtonListener(final ImageButton button)
-    {
-        return new View.OnTouchListener()
-        {
-            @Override
-            public boolean onTouch(View view, MotionEvent motionEvent)
-            {
-                if (button != null)
-                {
-                    if (motionEvent.getAction() == MotionEvent.ACTION_DOWN)
-                    {
-                        button.setColorFilter(ContextCompat.getColor(getContext(), R.color.btn_tint_pressed));
-                        performClick();
-                    } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                        button.setColorFilter(null);
-                    }
-                }
-                return false;
-            }
-        };
     }
 
     private int noteColor; //, springColor, summerColor, fallColor, winterColor;
@@ -240,23 +106,6 @@ public class EquinoxView extends LinearLayout
     public void initLocale(Context context)
     {
         isRtl = AppSettings.isLocaleRtl(context);
-        initAnimations(context);
-    }
-
-    private void initAnimations(Context context)
-    {
-        anim_card_inNext = AnimationUtils.loadAnimation(context, R.anim.fade_in);
-        anim_card_inPrev = AnimationUtils.loadAnimation(context, R.anim.fade_in);
-
-        anim_card_outNext = AnimationUtils.loadAnimation(context, R.anim.fade_out);
-        anim_card_outPrev = AnimationUtils.loadAnimation(context, R.anim.fade_out);
-    }
-
-    private EquinoxNote addNote(TextView labelView, TextView timeView, TextView noteView, int pageIndex)
-    {
-        EquinoxNote note = new EquinoxNote(labelView, timeView, noteView, pageIndex);
-        notes.add(note);
-        return note;
     }
 
     public void setTrackingMode(WidgetSettings.TrackingMode mode)
@@ -268,16 +117,7 @@ public class EquinoxView extends LinearLayout
         return trackingMode;
     }
 
-    public void setMinimized( boolean value )
-    {
-        this.minimized = value;
-    }
-    public boolean isMinimized()
-    {
-        return minimized;
-    }
-
-    private EquinoxNote findSoonestNote(Calendar now)
+    /**private EquinoxNote findSoonestNote(Calendar now)
     {
         return findClosestNote(now, true);
     }
@@ -311,409 +151,84 @@ public class EquinoxView extends LinearLayout
             }
         }
         return closest;
-    }
+    }*/
 
-    private void showNextPrevButtons( boolean show )
+    public void updateTime( Context context, Calendar time )
     {
-        if (show)
+        updateTime(context, time, false);
+    }
+    public void updateTime( Context context, Calendar time, boolean showSeconds )
+    {
+        this.time = time;
+        if (timeView != null)
         {
-            btn_flipperNext_thisYear.setVisibility(View.VISIBLE);
-            btn_flipperPrev_thisYear.setVisibility(View.GONE);
-            btn_flipperNext_nextYear.setVisibility(View.GONE);
-            btn_flipperPrev_nextYear.setVisibility(View.VISIBLE);
-
-        } else {
-            btn_flipperNext_thisYear.setVisibility(View.GONE);
-            btn_flipperPrev_thisYear.setVisibility(View.GONE);
-            btn_flipperNext_nextYear.setVisibility(View.GONE);
-            btn_flipperPrev_nextYear.setVisibility(View.GONE);
+            SuntimesUtils.TimeDisplayText timeText = utils.calendarDateTimeDisplayString(context, time, showSeconds);
+            timeView.setText(timeText.toString());
         }
     }
 
-    private void showTitle( boolean show )
+    public void updateNote( Context context, Calendar now, int noteColor )
     {
-        titleThisYear.setVisibility(show ? View.VISIBLE : View.GONE);
-        titleNextYear.setVisibility(show ? View.VISIBLE : View.GONE);
-    }
+        this.now = now;
+        if (noteView != null)
+        {
+            if (now != null && time != null)
+            {
+                String noteText = utils.timeDeltaDisplayString(now.getTime(), time.getTime()).toString();
 
-    private void showEmptyView( boolean show )
-    {
-        empty.setVisibility(show ? View.VISIBLE : View.GONE);
-        flipper.setVisibility(show ? View.GONE : View.VISIBLE);
+                if (time.before(Calendar.getInstance()))
+                {
+                    String noteString = context.getString(R.string.ago, noteText);
+                    SpannableString noteSpan = (noteView.isEnabled() ? SuntimesUtils.createBoldColorSpan(noteString, noteText, noteColor)
+                            : SuntimesUtils.createBoldSpan(noteString, noteText));
+                    noteView.setText(noteSpan);
+
+                } else {
+                    String noteString = context.getString(R.string.hence, noteText);
+                    SpannableString noteSpan = (noteView.isEnabled() ? SuntimesUtils.createBoldColorSpan(noteString, noteText, noteColor)
+                            : SuntimesUtils.createBoldSpan(noteString, noteText));
+                    noteView.setText(noteSpan);
+                }
+            } else {
+                noteView.setText("");
+            }
+        }
     }
 
     protected void updateViews( Context context, SuntimesEquinoxSolsticeDataset data )
     {
-        showTitle(!minimized);
-        showNextPrevButtons(!minimized);
-        showEmptyView(false);
-
         if (isInEditMode())
         {
-            if (minimized)
-            {
-                for (int i = 1; i < notes.size(); i++)
-                {
-                    EquinoxNote note = notes.get(i);
-                    note.setVisible(false);
-                }
-            }
             return;
         }
 
         if (data == null)
         {
-            for (EquinoxNote note : notes)
-            {
-                note.setEnabled(false);
-                note.updateTime(context, null);
-                note.updateNote(context, null);
-
-                if (minimized)
-                {
-                    note.setVisible(false);
-                }
-            }
+            updateTime(context, null);
+            updateNote(context, null, noteColor);
             return;
         }
 
         if (data.isCalculated() && data.isImplemented())
         {
-            SuntimesUtils.TimeDisplayText thisYear = utils.calendarDateYearDisplayString(context, data.dataEquinoxVernal.eventCalendarThisYear());
-            titleThisYear.setText(thisYear.toString());
-
-            SuntimesUtils.TimeDisplayText nextYear = utils.calendarDateYearDisplayString(context, data.dataEquinoxVernal.eventCalendarOtherYear());
-            titleNextYear.setText(nextYear.toString());
+            SuntimesEquinoxSolsticeData eventData = (trackingMode == WidgetSettings.TrackingMode.SOONEST ? data.findSoonest(data.now())
+                                                                                                         : data.findClosest(data.now()));
+            Calendar eventCalendar = eventData.eventCalendarUpcoming(data.now());
 
             boolean showSeconds = WidgetSettings.loadShowSecondsPref(context, 0);
-
-            note_equinox_vernal.updateTime(context, data.dataEquinoxVernal.eventCalendarThisYear(), showSeconds);
-            note_equinox_autumnal.updateTime(context, data.dataEquinoxAutumnal.eventCalendarThisYear(), showSeconds);
-            note_solstice_summer.updateTime(context, data.dataSolsticeSummer.eventCalendarThisYear(), showSeconds);
-            note_solstice_winter.updateTime(context, data.dataSolsticeWinter.eventCalendarThisYear(), showSeconds);
-
-            note_equinox_vernal2.updateTime(context, data.dataEquinoxVernal.eventCalendarOtherYear(), showSeconds);
-            note_equinox_autumnal2.updateTime(context, data.dataEquinoxAutumnal.eventCalendarOtherYear(), showSeconds);
-            note_solstice_summer2.updateTime(context, data.dataSolsticeSummer.eventCalendarOtherYear(), showSeconds);
-            note_solstice_winter2.updateTime(context, data.dataSolsticeWinter.eventCalendarOtherYear(), showSeconds);
-
-            for (EquinoxNote note : notes)
-            {
-                note.setEnabled();
-                note.updateNote(context, data.now());
-                note.setVisible(!minimized);
-            }
-
-            EquinoxNote nextNote = (trackingMode == WidgetSettings.TrackingMode.SOONEST ? findSoonestNote(data.now())
-                                                                                        : findClosestNote(data.now()));
-            if (nextNote == null)
-            {
-                nextNote = notes.get(0);
-            }
-
-            if (!userSwappedCard)
-            {
-                flipper.setDisplayedChild(nextNote.pageIndex);
-            }
-            nextNote.setVisible(true);
-            nextNote.setHighlighted(true);
-
-        } else {
-            showEmptyView(true);
+            updateTime(context, eventCalendar, showSeconds);
+            updateNote(context, data.now(), noteColor);
         }
-    }
-
-    public boolean saveState(Bundle bundle)
-    {
-        boolean cardIsNextYear = (flipper.getDisplayedChild() != 0);
-        bundle.putBoolean(EquinoxView.KEY_UI_CARDISNEXTYEAR, cardIsNextYear);
-        bundle.putBoolean(EquinoxView.KEY_UI_USERSWAPPEDCARD, userSwappedCard);
-        bundle.putBoolean(EquinoxView.KEY_UI_MINIMIZED, minimized);
-        Log.d("DEBUG", "EquinoxView saveState :: nextyear:" + cardIsNextYear + " :: swapped:" + userSwappedCard + " :: minimized:" + minimized);
-        return true;
-    }
-
-    public void loadState(Bundle bundle)
-    {
-        boolean cardIsNextYear = bundle.getBoolean(EquinoxView.KEY_UI_CARDISNEXTYEAR, false);
-        flipper.setDisplayedChild((cardIsNextYear ? 1 : 0));
-        userSwappedCard = bundle.getBoolean(EquinoxView.KEY_UI_USERSWAPPEDCARD, false);
-        minimized = bundle.getBoolean(EquinoxView.KEY_UI_MINIMIZED, minimized);
-        Log.d("DEBUG", "EquinoxView loadState :: nextyear: " + cardIsNextYear + " :: swapped:" + userSwappedCard + " :: minimized:" + minimized);
-    }
-
-    public boolean showNextCard()
-    {
-        if (hasNextCard())
-        {
-            flipper.setOutAnimation(anim_card_outNext);
-            flipper.setInAnimation(anim_card_inNext);
-            flipper.showNext();
-        }
-        return true;
-    }
-
-    public boolean hasNextCard()
-    {
-        int current = flipper.getDisplayedChild();
-        return ((current + 1) < flipper.getChildCount());
-    }
-
-    public boolean showPreviousCard()
-    {
-        if (hasPreviousCard())
-        {
-            flipper.setOutAnimation(anim_card_outPrev);
-            flipper.setInAnimation(anim_card_inPrev);
-            flipper.showPrevious();
-        }
-        return true;
-    }
-
-    public boolean hasPreviousCard()
-    {
-        int current = flipper.getDisplayedChild();
-        int prev = current - 1;
-        return (prev >= 0);
     }
 
     public void setOnClickListener( View.OnClickListener listener )
     {
-        flipper.setOnClickListener(listener);
+        layout.setOnClickListener(listener);
     }
 
     public void setOnLongClickListener( View.OnLongClickListener listener)
     {
-        flipper.setOnLongClickListener(listener);
-    }
-
-    private View.OnClickListener onNextCardClick = new View.OnClickListener()
-    {
-        @Override
-        public void onClick(View view)
-        {
-            userSwappedCard = showNextCard();
-        }
-    };
-
-    private View.OnClickListener onPrevCardClick = new View.OnClickListener()
-    {
-
-        @Override
-        public void onClick(View view)
-        {
-            userSwappedCard = showPreviousCard();
-        }
-    };
-
-    /**
-     *
-     */
-    private View.OnTouchListener cardTouchListener = new View.OnTouchListener()
-    {
-        public int MOVE_SENSITIVITY = 150;
-        public int FLING_SENSITIVITY = 25;
-        public float firstTouchX, secondTouchX;
-
-        @Override
-        public boolean onTouch(View view, MotionEvent event)
-        {
-            if (minimized)
-                return false;
-
-            switch (event.getAction())
-            {
-                case MotionEvent.ACTION_DOWN:
-                    firstTouchX = event.getX();
-                    performClick();
-                    break;
-
-                case MotionEvent.ACTION_UP:
-                    secondTouchX = event.getX();
-                    if ((secondTouchX - firstTouchX) > FLING_SENSITIVITY)
-                    {   // swipe right; back to previous view
-                        userSwappedCard = (isRtl ? showNextCard() : showPreviousCard());
-
-                    } else if (firstTouchX - secondTouchX > FLING_SENSITIVITY) {
-                        // swipe left; advance to next view
-                        userSwappedCard = (isRtl ? showPreviousCard() : showNextCard());
-
-                    } else {
-                        // swipe cancel; reset current view
-                        final View currentView = flipper.getCurrentView();
-                        currentView.layout(0, currentView.getTop(), currentView.getWidth(), currentView.getBottom());
-                    }
-                    break;
-
-                case MotionEvent.ACTION_MOVE:
-                    float currentTouchX = event.getX();
-                    int moveDelta = (int) (currentTouchX - firstTouchX);
-                    boolean isSwipeRight = (moveDelta > 0);
-
-                    final View currentView = flipper.getCurrentView();
-                    int currentIndex = flipper.getDisplayedChild();
-
-                    int otherIndex;
-                    if (isRtl)
-                    {
-                        otherIndex = (isSwipeRight ? currentIndex + 1 : currentIndex - 1);
-                    } else
-                    {
-                        otherIndex = (isSwipeRight ? currentIndex - 1 : currentIndex + 1);
-                    }
-
-                    if (otherIndex >= 0 && otherIndex < flipper.getChildCount())
-                    {
-                        // in-between child views; flip between them
-                        currentView.layout(moveDelta, currentView.getTop(),
-                                moveDelta + currentView.getWidth(), currentView.getBottom());
-
-                        // extended movement; manually trigger swipe/fling
-                        if (moveDelta > MOVE_SENSITIVITY || moveDelta < MOVE_SENSITIVITY * -1)
-                        {
-                            event.setAction(MotionEvent.ACTION_UP);
-                            return onTouch(view, event);
-                        }
-
-                    } //else {
-                        // at-a-boundary (the first/last view);
-                        // TODO: animate somehow to let user know there aren't additional views
-                    //}
-                    break;
-            }
-
-            return false;
-        }
-    };
-
-    /**
-     * EquinoxNote
-     */
-    protected class EquinoxNote
-    {
-        protected TextView labelView, timeView, noteView;
-        protected Calendar time, now;
-        protected boolean highlighted;
-        protected int pageIndex = 0;
-
-        public EquinoxNote(TextView labelView, TextView timeView, TextView noteView, int pageIndex)
-        {
-            this.labelView = labelView;
-            this.timeView = timeView;
-            this.noteView = noteView;
-            this.pageIndex = pageIndex;
-
-            if (this.timeView != null)
-            {
-                this.timeView.setOnClickListener( new View.OnClickListener()
-                {
-                    @Override
-                    public void onClick(View v)
-                    {
-                        if (minimized)
-                        {
-                            flipper.performClick();
-                        }
-                    }
-                });
-            }
-        }
-
-        public void updateTime( Context context, Calendar time )
-        {
-            updateTime(context, time, false);
-        }
-        public void updateTime( Context context, Calendar time, boolean showSeconds )
-        {
-            this.time = time;
-            if (timeView != null)
-            {
-                SuntimesUtils.TimeDisplayText timeText = utils.calendarDateTimeDisplayString(context, time, showSeconds);
-                timeView.setText(timeText.toString());
-            }
-        }
-
-        public void updateNote( Context context, Calendar now )
-        {
-            this.now = now;
-            if (noteView != null)
-            {
-                if (now != null && time != null)
-                {
-                    String noteText = utils.timeDeltaDisplayString(now.getTime(), time.getTime()).toString();
-
-                    if (time.before(Calendar.getInstance()))
-                    {
-                        String noteString = context.getString(R.string.ago, noteText);
-                        SpannableString noteSpan = (noteView.isEnabled() ? SuntimesUtils.createBoldColorSpan(noteString, noteText, noteColor)
-                                                                         : SuntimesUtils.createBoldSpan(noteString, noteText));
-                        noteView.setText(noteSpan);
-
-                    } else {
-                        String noteString = context.getString(R.string.hence, noteText);
-                        SpannableString noteSpan = (noteView.isEnabled() ? SuntimesUtils.createBoldColorSpan(noteString, noteText, noteColor)
-                                                                         : SuntimesUtils.createBoldSpan(noteString, noteText));
-                        noteView.setText(noteSpan);
-                    }
-                } else {
-                    noteView.setText("");
-                }
-            }
-        }
-
-        public void setHighlighted( boolean highlighted )
-        {
-            this.highlighted = highlighted;
-            //highlight(labelView, highlighted);
-            highlight(timeView, highlighted);
-            setEnabled(true);
-        }
-
-        private void highlight( TextView view, boolean value )
-        {
-            if (view != null)
-            {
-                if (value)
-                {
-                    view.setTypeface(view.getTypeface(), Typeface.BOLD);
-                    view.setPaintFlags(view.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
-
-                } else {
-                    view.setTypeface(view.getTypeface(), Typeface.NORMAL);
-                    view.setPaintFlags(view.getPaintFlags() & (~Paint.UNDERLINE_TEXT_FLAG));
-                }
-            }
-        }
-
-        public void setEnabled( boolean value)
-        {
-            labelView.setEnabled(value);
-            timeView.setEnabled(value);
-            noteView.setEnabled(value);
-        }
-
-        public void setEnabled()
-        {
-            if (time != null)
-            {
-                setEnabled(time.after(Calendar.getInstance()));
-
-            } else {
-                setEnabled(false);
-            }
-        }
-
-        public void setVisible( boolean visible )
-        {
-            labelView.setVisibility( visible ? View.VISIBLE : View.GONE);
-            timeView.setVisibility( visible ? View.VISIBLE : View.GONE);
-            noteView.setVisibility( visible ? View.VISIBLE : View.GONE);
-        }
-
-        public Calendar getTime()
-        {
-            return time;
-        }
+        layout.setOnLongClickListener(listener);
     }
 
 }

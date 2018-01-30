@@ -354,7 +354,6 @@ public class SuntimesActivity extends AppCompatActivity
         saveWarnings(outState);
         outState.putBoolean(KEY_UI_USERSWAPPEDCARD, userSwappedCard);
         outState.putBoolean(KEY_UI_CARDISTOMORROW, (card_flipper.getDisplayedChild() != 0));
-        card_equinoxSolstice.saveState(outState);
     }
 
     @Override
@@ -365,7 +364,6 @@ public class SuntimesActivity extends AppCompatActivity
         setUserSwappedCard(savedInstanceState.getBoolean(KEY_UI_USERSWAPPEDCARD, false), "onRestoreInstanceState");
         boolean cardIsTomorrow = savedInstanceState.getBoolean(KEY_UI_CARDISTOMORROW, false);
         card_flipper.setDisplayedChild((cardIsTomorrow ? 1 : 0));
-        card_equinoxSolstice.loadState(savedInstanceState);
     }
 
     /**
@@ -662,7 +660,7 @@ public class SuntimesActivity extends AppCompatActivity
         equinoxLayout = findViewById(R.id.info_time_equinox_layout);
 
         card_equinoxSolstice = (EquinoxView) findViewById(R.id.info_date_solsticequinox);
-        card_equinoxSolstice.setMinimized(true);
+        //card_equinoxSolstice.setMinimized(true);
         card_equinoxSolstice.setOnClickListener( new View.OnClickListener()
         {
             @Override
@@ -1330,6 +1328,7 @@ public class SuntimesActivity extends AppCompatActivity
         boolean enableEquinox = AppSettings.loadShowEquinoxPref(this);
         showEquinoxView(enableEquinox && dataset2.isImplemented());
         card_equinoxSolstice.setTrackingMode(WidgetSettings.loadTrackingModePref(context, AppWidgetManager.INVALID_APPWIDGET_ID));
+        card_equinoxSolstice.updateViews(SuntimesActivity.this, dataset2);
         card_equinoxSolstice.updateViews(SuntimesActivity.this, dataset2);
 
         //

@@ -1,5 +1,5 @@
 /**
-    Copyright (C) 2017 Forrest Guice
+    Copyright (C) 2017-2018 Forrest Guice
     This file is part of SuntimesWidget.
 
     SuntimesWidget is free software: you can redistribute it and/or modify
@@ -33,7 +33,7 @@ import com.forrestguice.suntimeswidget.calculator.SuntimesEquinoxSolsticeDataset
 
 public class EquinoxDialog extends DialogFragment
 {
-    private EquinoxView equinoxView;
+    private EquinoxTable equinoxTable;
 
     private SuntimesEquinoxSolsticeDataset data;
     public void setData( SuntimesEquinoxSolsticeDataset data )
@@ -59,7 +59,7 @@ public class EquinoxDialog extends DialogFragment
         if (savedInstanceState != null)
         {
             Log.d("DEBUG", "EquinoxDialog onCreate (restoreState)");
-            equinoxView.loadState(savedInstanceState);
+            equinoxTable.loadState(savedInstanceState);
         }
 
         dialog.setOnShowListener(new DialogInterface.OnShowListener()
@@ -67,7 +67,7 @@ public class EquinoxDialog extends DialogFragment
             @Override
             public void onShow(DialogInterface dialogInterface)
             {
-                equinoxView.updateViews(getContext(), data);
+                equinoxTable.updateViews(getContext(), data);
             }
         });
 
@@ -76,14 +76,14 @@ public class EquinoxDialog extends DialogFragment
 
     public void initViews(View dialogView)
     {
-        equinoxView = (EquinoxView) dialogView.findViewById(R.id.info_time_equinox);
+        equinoxTable = (EquinoxTable) dialogView.findViewById(R.id.info_time_equinox);
     }
 
     public void updateViews( SuntimesEquinoxSolsticeDataset data )
     {
-        if (equinoxView != null)
+        if (equinoxTable != null)
         {
-            equinoxView.updateViews(getContext(), data);
+            equinoxTable.updateViews(getContext(), data);
             Log.d("DEBUG", "EquinoxDialog updated");
         }
     }
@@ -91,7 +91,7 @@ public class EquinoxDialog extends DialogFragment
     @Override
     public void onSaveInstanceState( Bundle outState )
     {
-        equinoxView.saveState(outState);
+        equinoxTable.saveState(outState);
         super.onSaveInstanceState(outState);
     }
 }
