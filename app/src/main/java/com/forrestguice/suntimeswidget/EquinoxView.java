@@ -20,7 +20,6 @@ package com.forrestguice.suntimeswidget;
 import android.content.Context;
 import android.content.res.TypedArray;
 
-import android.graphics.Color;
 import android.support.v4.content.ContextCompat;
 import android.text.SpannableString;
 import android.util.AttributeSet;
@@ -50,8 +49,6 @@ public class EquinoxView extends LinearLayout
     private View layout;
     private TextView labelView, timeView, noteView;
     protected Calendar time, now;
-
-    private int[] colors = new int[4];
 
     public EquinoxView(Context context)
     {
@@ -88,7 +85,8 @@ public class EquinoxView extends LinearLayout
         }
     }
 
-    private int noteColor; //, springColor, summerColor, fallColor, winterColor;
+    private int noteColor;
+    private int[] colors = new int[4];
 
     private void initColors(Context context)
     {
@@ -106,6 +104,7 @@ public class EquinoxView extends LinearLayout
     public void initLocale(Context context)
     {
         isRtl = AppSettings.isLocaleRtl(context);
+        WidgetSettings.SolsticeEquinoxMode.initDisplayStrings(context);
     }
 
     public void setTrackingMode(WidgetSettings.TrackingMode mode)
@@ -115,6 +114,11 @@ public class EquinoxView extends LinearLayout
     public WidgetSettings.TrackingMode getTrackingMode()
     {
         return trackingMode;
+    }
+
+    public void updateLabel(WidgetSettings.SolsticeEquinoxMode mode)
+    {
+        labelView.setText(mode.getLongDisplayString());
     }
 
     public void updateColor(WidgetSettings.SolsticeEquinoxMode mode)
@@ -205,7 +209,9 @@ public class EquinoxView extends LinearLayout
             Calendar eventCalendar = (trackingMode == WidgetSettings.TrackingMode.SOONEST ? eventData.eventCalendarClosest(data.now())
                                                                                           : eventData.eventCalendarUpcoming(data.now()));
 
-            updateColor(eventData.timeMode());
+            WidgetSettings.SolsticeEquinoxMode mode = eventData.timeMode();
+            updateLabel(mode);
+            updateColor(mode);
             boolean showSeconds = WidgetSettings.loadShowSecondsPref(context, 0);
             updateTime(context, eventCalendar, showSeconds);
             updateNote(context, data.now(), noteColor);
