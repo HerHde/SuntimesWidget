@@ -20,6 +20,7 @@ package com.forrestguice.suntimeswidget;
 import android.content.Context;
 import android.content.res.TypedArray;
 
+import android.support.annotation.StyleableRes;
 import android.support.v4.content.ContextCompat;
 import android.text.SpannableString;
 import android.util.AttributeSet;
@@ -91,13 +92,20 @@ public class EquinoxView extends LinearLayout
     private void initColors(Context context)
     {
         int[] colorAttrs = { android.R.attr.textColorPrimary , R.attr.springColor, R.attr.summerColor, R.attr.fallColor, R.attr.winterColor };
+        @StyleableRes int noteIndex = 0;
+        @StyleableRes int springIndex = 1;
+        @StyleableRes int summerIndex = 2;
+        @StyleableRes int autumnIndex = 3;
+        @StyleableRes int winterIndex = 4;
+
         TypedArray typedArray = context.obtainStyledAttributes(colorAttrs);
         int def = R.color.transparent;
-        noteColor = ContextCompat.getColor(context, typedArray.getResourceId(0, def));
-        colors[0] = ContextCompat.getColor(context, typedArray.getResourceId(1, def));
-        colors[1] = ContextCompat.getColor(context, typedArray.getResourceId(2, def));
-        colors[2] = ContextCompat.getColor(context, typedArray.getResourceId(3, def));
-        colors[3] = ContextCompat.getColor(context, typedArray.getResourceId(4, def));
+
+        noteColor = ContextCompat.getColor(context, typedArray.getResourceId(noteIndex, def));
+        colors[0] = ContextCompat.getColor(context, typedArray.getResourceId(springIndex, def));
+        colors[1] = ContextCompat.getColor(context, typedArray.getResourceId(summerIndex, def));
+        colors[2] = ContextCompat.getColor(context, typedArray.getResourceId(autumnIndex, def));
+        colors[3] = ContextCompat.getColor(context, typedArray.getResourceId(winterIndex, def));
         typedArray.recycle();
     }
 
